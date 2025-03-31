@@ -7,7 +7,7 @@ import firebase_admin
 from firebase_admin import credentials, storage
 from datetime import datetime
 #Initial Firebase Admin SDK
-cred = credentials.Certificate("")
+cred = credentials.Certificate("F:/EoH Company/OTS_HumanDetection_ServerProxy_Final/pythoncodeCaptureIMG_Camera/esp32cam-4dbf9-firebase-adminsdk-4xg7o-0482ba7bf9.json")
 
 firebase_admin.initialize_app(cred, {
     'storageBucket': 'esp32cam-4dbf9.appspot.com'  #projectID
@@ -16,12 +16,12 @@ firebase_admin.initialize_app(cred, {
 def capture_and_upload_image():
     try:
         # Camera credentials
-        username = ""
-        password = "" 
+        username = "admin"
+        password = "Eoh54321" 
         encoded_password = quote_plus(password)  #Processing of special symbols
         
         # URL và xác thực
-        url = ""
+        url = "http://admin:Eoh54321@14.241.233.207:28001/ISAPI/Streaming/channels/1/picture"
     
         #Send request using Digest Auth
         response = requests.get(
