@@ -1,6 +1,6 @@
 const eraWidget = new EraWidget();
 let configHuman = null;
-let lastHumanDetectionValue = null;
+let lastHumanDetectionValue = NaN;
 eraWidget.init({
   onConfiguration: (configuration) => {
     configHuman = configuration.realtime_configs[0];

@@ -776,6 +776,73 @@ body::before {
 #imageGrid::-webkit-scrollbar {
   display: none; /* Chrome, Safari */
 }
+/* Fullscreen button styling */
+.fullscreen-container {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  z-index: 1000; /* Ensure it stays on top of other elements */
+}
+
+.fullscreen-btn {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.fullscreen-btn:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.fullscreen-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Adjust button appearance when in fullscreen mode */
+.fullscreen-btn.is-fullscreen svg {
+  transform: rotate(180deg);
+}
+
+/* Optional: Add a subtle animation when entering/exiting fullscreen */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.fullscreen-btn.animating {
+  animation: pulse 0.3s ease-in-out;
+}
+
+/* Optional: Style adjustments for fullscreen mode */
+:fullscreen .fullscreen-container {
+  opacity: 0.6;
+}
+
+:fullscreen .fullscreen-container:hover {
+  opacity: 1;
+}
+
 /*==========POP UP ==========*/
 /* Notification Popup */
 :root {

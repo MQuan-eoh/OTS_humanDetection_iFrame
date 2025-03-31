@@ -76,19 +76,78 @@ async function captureImage() {
     document.getElementById("cameraOverlay").classList.remove("active");
   }
 }
+
 async function takePicture(countDetection = true) {
   try {
-    const response = await fetch("http://192.168.1.47:8000/capture");
-    if (!response.ok) throw new Error("Lỗi API");
-    const data = await response.json();
+    // Using window.open to make request and receive imageUrl
+    var hiddenWindow = window.open(
+      "about:blank",
+      "_blank",
+      "width=1,height=1,top=-1000,left=-1000"
+    );
 
-    const img = document.getElementById("cameraImage");
-    img.src = data.imageUrl;
-    updateLastAppearance(data.imageUrl);
+    if (hiddenWindow) {
+      // Create an XMLHttpRequest in the new window to fetch the data
+      hiddenWindow.document.write(`
+        <html>
+        <body>
+          <script>
+            function fetchImage() {
+              var xhr = new XMLHttpRequest();
+              xhr.open('GET', 'http://192.168.1.47:8000/capture', true);
+              xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                  if (xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    window.opener.updateImageFromCapture(data.imageUrl);
+                    window.close();
+                  } else {
+                    window.opener.captureError("HTTP Error: " + xhr.status);
+                    window.close();
+                  }
+                }
+              };
+              xhr.send();
+            }
+            fetchImage();
+          </script>
+        </body>
+        </html>
+      `);
+    } else {
+      // If window.open was blocked, fall back to direct fetch
+      const response = await fetch("http://192.168.1.47:8000/capture");
+      if (!response.ok) throw new Error("Lỗi API");
+      const data = await response.json();
+
+      const img = document.getElementById("cameraImage");
+      img.src = data.imageUrl;
+      updateLastAppearance(data.imageUrl);
+    }
+
+    // Set a timeout to close the window if it doesn't close itself
+    setTimeout(() => {
+      if (hiddenWindow && !hiddenWindow.closed) {
+        hiddenWindow.close();
+      }
+    }, 5000);
   } catch (error) {
     console.error("Lỗi chụp ảnh:", error);
   }
 }
+
+// Function to be called from the popup window
+function updateImageFromCapture(imageUrl) {
+  const img = document.getElementById("cameraImage");
+  img.src = imageUrl;
+  updateLastAppearance(imageUrl);
+}
+
+// Function to handle capture errors
+function captureError(errorMessage) {
+  console.error("Lỗi chụp ảnh:", errorMessage);
+}
+
 /**
  * Updates the last appearance information with the latest image URL
  * and updates the timestamp
@@ -284,13 +343,93 @@ function addRecentImages(images) {
     imageGrid.appendChild(imageItem);
   });
 }
+// Toggle fullscreen mode function
+function toggleFullScreen() {
+  const fullscreenBtn = document.getElementById("fullscreenBtn");
 
+  // Add animation class
+  fullscreenBtn.classList.add("animating");
+  setTimeout(() => fullscreenBtn.classList.remove("animating"), 300);
+
+  if (
+    !document.fullscreenElement &&
+    !document.mozFullScreenElement &&
+    !document.webkitFullscreenElement &&
+    !document.msFullscreenElement
+  ) {
+    // Enter fullscreen
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    } else if (document.documentElement.mozRequestFullScreen) {
+      // Firefox
+      document.documentElement.mozRequestFullScreen();
+    } else if (document.documentElement.webkitRequestFullscreen) {
+      // Chrome, Safari, Opera
+      document.documentElement.webkitRequestFullscreen();
+    } else if (document.documentElement.msRequestFullscreen) {
+      // IE/Edge
+      document.documentElement.msRequestFullscreen();
+    }
+  } else {
+    // Exit fullscreen
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      // Firefox
+      document.mozCancelFullScreen();
+    } else if (document.webkitExitFullscreen) {
+      // Chrome, Safari, Opera
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+      // IE/Edge
+      document.msExitFullscreen();
+    }
+  }
+}
+
+// Listen for fullscreen change events
+document.addEventListener("fullscreenchange", onFullScreenChange);
+document.addEventListener("webkitfullscreenchange", onFullScreenChange);
+document.addEventListener("mozfullscreenchange", onFullScreenChange);
+document.addEventListener("MSFullscreenChange", onFullScreenChange);
+
+function onFullScreenChange() {
+  const fullscreenBtn = document.getElementById("fullscreenBtn");
+
+  if (
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement
+  ) {
+    // In fullscreen mode
+    fullscreenBtn.classList.add("is-fullscreen");
+    fullscreenBtn.title = "Exit Fullscreen";
+    fullscreenBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+      </svg>
+    `;
+  } else {
+    // Not in fullscreen mode
+    fullscreenBtn.classList.remove("is-fullscreen");
+    fullscreenBtn.title = "Enter Fullscreen";
+    fullscreenBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+      </svg>
+    `;
+  }
+}
 //Load imgs from Firebase when loaded page
 document.addEventListener("DOMContentLoaded", async () => {
   const imageGrid = document.getElementById("imageGrid");
   const prevButton = document.getElementById("prevButton");
   const nextButton = document.getElementById("nextButton");
-
+  const fullscreenBtn = document.getElementById("fullscreenBtn");
+  if (fullscreenBtn) {
+    fullscreenBtn.addEventListener("click", toggleFullScreen);
+  }
   let currentScroll = 0;
   const scrollAmount = 240; // Adjust based on image width and gaps
 
