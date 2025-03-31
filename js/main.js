@@ -55,13 +55,19 @@ function showNotification() {
 async function captureImage() {
   document.getElementById("cameraOverlay").classList.add("active");
   showNotification();
+
+  // Increment detectionCount only once here, at the start of the process
+  detectionCount++;
+  localStorage.setItem("detectionCount", detectionCount);
+  document.getElementById("detectionCount").textContent = detectionCount;
+
   try {
-    // Chụp ảnh lần 1
+    //First capture
     await takePicture();
 
-    // Chờ 1.6s và chụp lần 2
+    //Wait 1.6s and take a second shot
     setTimeout(async () => {
-      await takePicture();
+      await takePicture(false); // Pass false parameter to not increment counter
       await fetchRecentImages();
       document.getElementById("cameraOverlay").classList.remove("active");
     }, 1600);
@@ -70,8 +76,7 @@ async function captureImage() {
     document.getElementById("cameraOverlay").classList.remove("active");
   }
 }
-
-async function takePicture() {
+async function takePicture(countDetection = true) {
   try {
     const response = await fetch("http://192.168.1.47:8000/capture");
     if (!response.ok) throw new Error("Lỗi API");
@@ -79,11 +84,6 @@ async function takePicture() {
 
     const img = document.getElementById("cameraImage");
     img.src = data.imageUrl;
-    // Increment and update detection count
-    detectionCount++;
-    localStorage.setItem("detectionCount", detectionCount);
-    document.getElementById("detectionCount").textContent = detectionCount;
-
     updateLastAppearance(data.imageUrl);
   } catch (error) {
     console.error("Lỗi chụp ảnh:", error);
